@@ -3,21 +3,26 @@
 #include "LFU_cache.hpp"
 
 int main() {
+    size_t CacheSize    = 0;
+    size_t ElementCount = 0;
+    size_t HitCount     = 0;
 
-    LFU_cache<int, int> cache(3);
+    std::cin >> CacheSize;
+    std::cin >> ElementCount;
 
-    int data[][2] = {{1, 10}, {2, 20}, {3, 30}, {4, 40}};
+    LFUCache<int, int> cache(CacheSize);
 
-    for (size_t i = 0; i < sizeof(data) / (sizeof(int) * 2) - 1; i++) {
-        cache.put(data[i][0], data[i][1]);
+    for (size_t i = 0; i < ElementCount; i++) 
+    {
+        int element = 0;
+        std::cin >> element;
+        if (cache.get(element)) HitCount++;
+
+        else 
+            cache.put(element, element);
     }
 
-    std::cout << *(cache.get(2)) << std::endl;
-    std::cout << *(cache.get(1)) << std::endl;
-
-    cache.put(data[3][0], data[3][1]);
-
-    cache.dump();
+    std::cout << HitCount << std::endl;
 
     return 0;
 }
