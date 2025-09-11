@@ -11,24 +11,31 @@ class LFUCache
     size_t                                      capacity;
     size_t                                      size;
 
-    Page_indexT get_min_freq_index() 
+
+private:
+    Page_indexT get_min_freq_index() const
     {
         size_t      min_freq  = __LONG_MAX__;
         Page_indexT ret_index = (freqMap.begin())->first;
 
-        for (auto node = freqMap.begin(); node != freqMap.end(); node++) 
+        for (auto& node : freqMap) 
         {
-            if (node->second < min_freq) 
+            if (node.second < min_freq) 
             {
-                min_freq  = node->second;
-                ret_index = node->first;
+                min_freq  = node.second;
+                ret_index = node.first;
             }
         }
 
         return ret_index;
     }
 
-    LFUCache(size_t capacity_) : capacity(capacity_) {size = 0;}
+
+public:
+    LFUCache(size_t capacity_) : capacity(capacity_), size(0) {}
+
+    auto begin() { return valueMap.begin(); }
+    auto end()   { return valueMap.end();   }
 
     Page_dataT* get(Page_indexT index) 
     {
@@ -49,7 +56,6 @@ class LFUCache
 
         if (found_page == valueMap.end()) 
         {
-
             if (size >= capacity) 
             {
                 Page_indexT del_index = get_min_freq_index();
@@ -73,7 +79,7 @@ class LFUCache
         size++;
     }
 
-    void dump() 
+    void dump() const
     {
         std::cout << "Capacity: " << capacity << std::endl;
         std::cout << "Size: "     << size     << std::endl;
