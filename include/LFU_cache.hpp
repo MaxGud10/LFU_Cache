@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <list>
 #include <unordered_map>
 
 template<typename Page_indexT, typename Page_dataT>
@@ -13,6 +14,10 @@ class LFUCache
 
 
 private:
+    std::unordered_map<Page_indexT, typename std::list<Page_indexT>::iterator> iterMap;
+    std::unordered_map<size_t, std::list<Page_indexT>> buckets;
+    size_t minFreq = 0;
+
     Page_indexT get_min_freq_index() const
     {
         size_t      min_freq  = __LONG_MAX__;
@@ -39,44 +44,72 @@ public:
 
     Page_dataT* get(Page_indexT index) 
     {
-        auto found_page = valueMap.find(index);
-
-        if (found_page == valueMap.end())
+        auto it_val = valueMap.find(index);
+        if (it_val == valueMap.end())
             return nullptr;
-        
-        auto page_freq = freqMap.find(index);
-        (page_freq->second)++;
 
-        return &(found_page->second);
+        size_t f = freqMap[index];
+
+
+        auto it_it = iterMap.find(index);
+        if (it_it != iterMap.end())
+        {
+            auto &lst = buckets[f];
+            lst.erase(it_it->second);
+        }
+
+        if (f == minFreq && buckets[f].empty())
+        {
+            buckets.erase(f);
+            ++minFreq;
+        }
+
+        size_t nf = f + 1;
+
+        freqMap[index] = nf;
+        buckets[nf   ].push_front(index);
+        iterMap[index] = buckets[nf].begin();
+
+        return &(it_val->second);
     }
 
     void put(Page_indexT& index, Page_dataT& data) 
     {
-        auto found_page = valueMap.find(index);
+        if (capacity == 0) return;
 
-        if (found_page == valueMap.end()) 
+        auto itVal = valueMap.find(index);
+
+        if (itVal == valueMap.end()) 
         {
             if (size >= capacity) 
             {
-                Page_indexT del_index = get_min_freq_index();
+                auto &lst = buckets[minFreq];
+                Page_indexT victim = lst.back();
+                lst.pop_back();
 
-                valueMap.erase(del_index);
-                freqMap .erase(del_index);
+                if (lst.empty()) buckets.erase(minFreq);
 
-                size--;
+                valueMap.erase(victim);
+                freqMap .erase(victim);
+                iterMap .erase(victim);
+                --size;
             }
 
-            valueMap.insert(std::make_pair(index, data));
-            freqMap .insert(std::make_pair(index, 1));
+            valueMap[index] = data;
+            freqMap [index] = 1;
+
+            buckets [1].push_front(index);
+
+            iterMap [index] = buckets[1].begin();
+            minFreq = 1;
+            ++size;
         }
         else 
         {
-            auto page_freq = freqMap.find(index);
-            (page_freq->second)++;
+            itVal->second = data;
+            (void)get(index);  
             return;
         }
-
-        size++;
     }
 
     void dump() const
