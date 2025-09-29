@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.8 FATAL_ERROR)
 
-project (cache)
+project (Cache)
 
 set(LFU_CACHE LFU)
 set(IDEAL_CACHE ideal)

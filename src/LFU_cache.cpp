@@ -1,15 +1,12 @@
 #include <iostream>
-
+#include <optional>      
 #include "LFU_cache.hpp"
-
-
 
 size_t LFU_cache_driver();
 
 int main() 
 {
     size_t HitCount = LFU_cache_driver();
-    
     std::cout << HitCount << std::endl;
 
     return 0;
@@ -26,15 +23,19 @@ size_t LFU_cache_driver()
 
     LFUCache<int, int> cache(CacheSize);
 
-    for (size_t i = 0; i < ElementCount; i++) 
+    for (size_t i = 0; i < ElementCount; ++i) 
     {
         int element = 0;
         std::cin >> element;
-        if (cache.get(element) != nullptr) ++HitCount;
-        else 
+
+        auto res = cache.fetch(element);
+        if (res) 
         {
-            cache.put(element, element);
+            ++HitCount;          
         }
+
+        else 
+            cache.store(element, element);  
     }
 
     return HitCount;

@@ -48,7 +48,7 @@ public:
     auto begin() { return cache.begin(); }
     auto end()   { return cache.end();   }
 
-    auto get(Page_indexT& index) 
+    auto get(const Page_indexT& index) 
     { 
         auto found_page = cache.find(index);
 
@@ -62,7 +62,7 @@ public:
         return found_page;
     }
 
-    void put(Page_indexT& index, Page_dataT& data) 
+    void put(const Page_indexT& index,const Page_dataT& data) 
     {
         auto found_page = cache.find(index);
         auto elem_info  = input_data.find(index);
