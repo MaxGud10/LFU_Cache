@@ -1,42 +1,39 @@
+#include <cassert>
 #include <iostream>
-#include <optional>      
-#include "LFU_cache.hpp"
 
-size_t LFU_cache_driver();
+#include "LFU_cache.hpp"
+#include "cache_driver.hpp"
+
+
+static int slow_get_page_int(int page_id) { return page_id; }
 
 int main() 
 {
-    size_t HitCount = LFU_cache_driver();
-    std::cout << HitCount << std::endl;
+    std::size_t cache_capacity = 0;
+    int         request_count  = 0;
 
+    std::cin >> cache_capacity >> request_count;
+    assert(std::cin.good());
+
+    Caches::LFUCache<int, int> cache{cache_capacity};
+    Caches::CacheDriver        driver{cache};
+
+    int hit_count = 0;
+
+    for (int i = 0; i < request_count; ++i)
+    {
+        int page_id = 0;
+        std::cin >> page_id;
+        assert(std::cin.good());
+
+        if (driver.lookup_update(page_id, slow_get_page_int)) 
+        {
+            ++hit_count;
+        }
+    }
+
+    std::cout << hit_count << std::endl;
+    
     return 0;
 }
 
-size_t LFU_cache_driver() 
-{
-    size_t CacheSize    = 0;
-    size_t ElementCount = 0;
-    size_t HitCount     = 0;
-
-    std::cin >> CacheSize;
-    std::cin >> ElementCount;
-
-    LFUCache<int, int> cache(CacheSize);
-
-    for (size_t i = 0; i < ElementCount; ++i) 
-    {
-        int element = 0;
-        std::cin >> element;
-
-        auto res = cache.fetch(element);
-        if (res) 
-        {
-            ++HitCount;          
-        }
-
-        else 
-            cache.store(element, element);  
-    }
-
-    return HitCount;
-}

@@ -1,62 +1,66 @@
+#include <cassert>
 #include <iostream>
+#include <vector>
+#include <queue>
+#include <unordered_map>
 
 #include "ideal_cache.hpp"
+#include "cache_driver.hpp" 
 
-size_t ideal_cache_driver();
 
 
+static int slow_get_page_int(int page_id) { return page_id; }
 
 int main() 
 {
-    size_t HitCount = ideal_cache_driver();
+    std::size_t cache_capacity = 0;
+    std::size_t request_count  = 0;
 
-    std::cout << HitCount << std::endl;
+    std::cin >> cache_capacity;
+    std::cin >> request_count;
+    assert(std::cin.good());
 
+    std::vector<int> requests;
+    requests.reserve(request_count);
+    for (std::size_t pos = 0; pos < request_count; ++pos) 
+    {
+        int page_id = 0;
+        std::cin >> page_id;
+        assert(std::cin.good());
+        requests.push_back(page_id);
+    }
+
+    Caches::IdealCache<int, int> cache{cache_capacity};
+    for (std::size_t pos = 0; pos < requests.size(); ++pos) 
+    {
+        int page_id = requests[pos];
+        auto it = cache.input_data.find(page_id);
+
+        if (it == cache.input_data.end()) 
+        {
+            std::queue<std::size_t> q;
+            q.push(pos);
+            cache.input_data.emplace(page_id, std::move(q));
+        } 
+        else 
+            it->second.push(pos);
+    }
+
+    Caches::CacheDriver driver{cache}; 
+
+    std::size_t hit_count = 0;
+    for (std::size_t pos = 0; pos < requests.size(); ++pos) 
+    {
+        int page_id = requests[pos];
+
+        if (driver.lookup_update(page_id, slow_get_page_int)) 
+        {
+            ++hit_count; 
+        }
+
+        ++cache.current_position;
+    }
+
+    std::cout << hit_count << std::endl;
     return 0;
-}
-
-size_t ideal_cache_driver() 
-{
-    size_t CacheSize    = 0;
-    size_t ElementCount = 0;
-    size_t HitCount     = 0;
-
-    std::cin >> CacheSize;
-    std::cin >> ElementCount;
-
-    IdealCache<int, int> cache(CacheSize);
-    std::vector<int>     input_data;
-
-
-    for (size_t position = 0; position < ElementCount; position++) 
-    {
-        int elem = 0;
-        std::cin >> elem;
- 
-        input_data.push_back(elem);
-
-        auto elem_info = cache.input_data.find(elem);
-
-        if (elem_info == cache.input_data.end()) 
-        {
-            std::queue<size_t> position_queue;
-            position_queue.push(position);
-
-            cache.input_data.emplace(elem, position_queue);
-        }
-        else 
-            elem_info->second.push(position);
-    }
-
-    for (int& element : input_data) 
-    {
-        if (cache.get(element) != cache.end()) HitCount++;
-        else 
-        {
-            cache.put(element, element);
-        }
-        cache.current_position++;
-    }
-
-    return HitCount;
 }

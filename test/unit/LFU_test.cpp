@@ -5,14 +5,14 @@
 
 TEST(LFU_tests, miss_before_put) 
 {
-  LFUCache<int, int> cache(5);
+  Caches::LFUCache<int, int> cache(5);
  
   EXPECT_EQ(cache.fetch(123), std::nullopt);
 }
 
 TEST(LFU_tests, single_put_get) 
 {
-  LFUCache<int, int> cache(5);
+  Caches::LFUCache<int, int> cache(5);
 
   int element = 1;
   cache.store(element, element);
@@ -26,7 +26,7 @@ TEST(LFU_tests, single_put_get)
 
 TEST(LFU_tests, many_put_get) 
 {
-  LFUCache<int, int> cache(5);
+  Caches::LFUCache<int, int> cache(5);
 
   int element_1 = 1, element_2 = 2;
 

@@ -7,11 +7,16 @@
 #include <limits> 
 
 
+namespace Caches
+{
 
 template<typename Page_indexT, typename Page_dataT>
 class LFUCache 
 {
 public:
+    using index_type = Page_indexT;
+    using data_type  = Page_dataT;
+
     LFUCache(size_t capacity_) : capacity(capacity_) {}
 
     auto begin() { return valueMap.begin(); }
@@ -81,7 +86,7 @@ public:
         std::cout << std::endl;
     }
 
-private:ё
+private:
     struct EntryInfo 
     {
         size_t freq = 0;                              // частота использования
@@ -104,11 +109,11 @@ private:ё
         }
 
 
-        size_t nf = f + 1;
+        size_t nf   = f + 1;
         auto& nlist = buckets[nf];
         nlist.push_front(index);
-        info.freq = nf;
-        info.it = nlist.begin();
+        info.freq   = nf;
+        info.it     = nlist.begin();
     }
 
 private:
@@ -119,3 +124,4 @@ private:
     size_t                                             minFreq = 0;
 };
 
+} // namespace Caches

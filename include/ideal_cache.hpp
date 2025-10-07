@@ -4,11 +4,18 @@
 #include <queue>
 #include <unordered_map>
 #include <limits>
+#include <optional>
+
+namespace Caches
+{
 
 template<typename Page_indexT, typename Page_dataT>
 class IdealCache 
 {
 public:
+    using index_type = Page_indexT;
+    using data_type  = Page_dataT;
+
     std::unordered_map<Page_indexT, std::queue<size_t>> input_data; 
     size_t                                              current_position;
 
@@ -17,74 +24,69 @@ private:
     size_t                                              size;
     std::unordered_map<Page_indexT, Page_dataT>         cache;
 
-    void remove_farthest() 
+    void remove_farthest()
     {
-        Page_indexT remove_index = cache.begin()->first;
-        size_t      max_distance = 0;
-        const size_t INF = std::numeric_limits<size_t>::max();
+        Page_indexT victim  = cache.begin()->first;
+        size_t      max_pos = 0;
+        const size_t INF    = std::numeric_limits<size_t>::max();
 
-        for (auto& elem : cache) 
+        for (const auto& [key, _] : cache) 
         {
-            auto elem_info = input_data.find(elem.first);
-            size_t elem_distance = (elem_info == input_data.end() || elem_info->second.empty())
-                                   ? INF
-                                   : elem_info->second.front();
+            auto       it         = input_data.find(key);
+            const bool has_future = (it != input_data.end() && !it->second.empty());
+            size_t     next_pos   = has_future ? it->second.front() : INF;
 
-            if (elem_distance >= max_distance) 
+            if (next_pos >= max_pos) 
             {
-                max_distance = elem_distance;
-                remove_index = elem.first;
+                max_pos = next_pos;
+                victim  = key;
             }
         }
-
-        cache.erase(remove_index);
-        if (size > 0) --size;
+        cache.erase(victim);
     }
   
 public:
-
     IdealCache(size_t capacity_) : capacity(capacity_), size(0), current_position(0) {} 
 
     auto begin() { return cache.begin(); }
     auto end()   { return cache.end();   }
 
-    auto get(const Page_indexT& index) 
-    { 
-        auto found_page = cache.find(index);
+    std::optional<Page_dataT> fetch(const Page_indexT& index)
+    {
+        auto it = cache.find(index);
+        if (it == cache.end()) 
+            return std::nullopt;
 
-        if (found_page == cache.end()) 
-            return cache.end();
 
-        auto elem_info = input_data.find(index);
-        if (elem_info != input_data.end() && !elem_info->second.empty())
-            (elem_info->second).pop();
+        auto qit = input_data.find(index);
+        if (qit != input_data.end() && !qit->second.empty())
+            qit->second.pop();
 
-        return found_page;
+        return it->second; 
     }
 
-    void put(const Page_indexT& index,const Page_dataT& data) 
+    void store(const Page_indexT& index, const Page_dataT& data)
     {
-        auto found_page = cache.find(index);
-        auto elem_info  = input_data.find(index);
+        auto qit = input_data.find(index);
+        if (qit != input_data.end() && !qit->second.empty())
+            qit->second.pop(); 
 
-        if (elem_info != input_data.end() && !elem_info->second.empty())
-            (elem_info->second).pop();
 
-        if (found_page != cache.end())   return; 
+        if (cache.find(index) != cache.end())
+            return;
 
-        // если больше не будет обращений — можно не хранить
-        if (elem_info == input_data.end() || elem_info->second.empty()) return;    
+        const bool no_future = (qit == input_data.end() || qit->second.empty());
+        if (no_future)
+            return;
 
-        if (size < capacity) 
+        if (cache.size() < capacity) 
         {
             cache.emplace(index, data);
-            size++;
             return;
         }
 
         remove_farthest();
         cache.emplace(index, data);
-        size++;
     }
 
     void cache_dump()
@@ -96,3 +98,5 @@ public:
             std::cout << "Index: " << key << " Data: " << page << std::endl;
     }
 };
+
+} // namespace Caches

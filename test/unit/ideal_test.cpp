@@ -1,74 +1,84 @@
 #include <gtest/gtest.h>
-
+#include <queue>
+#include <vector>
 #include "ideal_cache.hpp"
 
-TEST(ideal_test, single_put_get) 
+
+TEST(ideal_test, single_store_fetch) 
 {
-    IdealCache<int, int> cache(5);
+    Caches::IdealCache<int, int> cache(5);
 
-    std::vector<int> input_data = {1};
+    std::vector<int> req = {1};
 
-    for (size_t i = 0; i < input_data.size(); i++) 
+    for (size_t i = 0; i < req.size(); ++i) 
     {
-        std::queue<size_t> position_queue;
-        position_queue.push(i);
-        position_queue.push(i);
-
-        cache.input_data.emplace(input_data[i], position_queue);
-    } 
-
-    for (int& element : input_data) 
-    {
-        cache.put(element, element);
+        std::queue<size_t> q;
+        q.push(i); 
+        q.push(i); 
+        cache.input_data.emplace(req[i], std::move(q));
     }
 
-    EXPECT_EQ(cache.get(input_data[0])->second, input_data[0]);
+
+    for (int page_id : req) 
+    {
+        cache.store(page_id, page_id);
+    }
+
+    auto v = cache.fetch(req[0]);
+    ASSERT_TRUE(v.has_value());
+    EXPECT_EQ(*v, req[0]);
 }
 
-TEST(ideal_test, many_put_get) 
+TEST(ideal_test, many_store_fetch) 
 {
-    IdealCache<int, int> cache(5);
+    Caches::IdealCache<int, int> cache(5);
 
-    std::vector<int> input_data = {1, 2};
+    std::vector<int> req = {1, 2};
 
-    for (size_t i = 0; i < input_data.size(); i++) 
+    for (size_t i = 0; i < req.size(); ++i) 
     {
-        std::queue<size_t> position_queue;
-        position_queue.push(i);
-        position_queue.push(i);
-
-        cache.input_data.emplace(input_data[i], position_queue);
-    } 
-
-    for (int& element : input_data) 
-    {
-        cache.put(element, element);
+        std::queue<size_t> q;
+        q.push(i); 
+        q.push(i); 
+        cache.input_data.emplace(req[i], std::move(q));
     }
 
-    EXPECT_EQ(cache.get(input_data[0])->second, input_data[0]);
-    EXPECT_EQ(cache.get(input_data[1])->second, input_data[1]);
+    for (int page_id : req)
+    {
+        cache.store(page_id, page_id);
+    }
+
+    auto v0 = cache.fetch(req[0]);
+    ASSERT_TRUE(v0.has_value());
+    EXPECT_EQ(*v0, req[0]);
+
+    auto v1 = cache.fetch(req[1]);
+    ASSERT_TRUE(v1.has_value());
+    EXPECT_EQ(*v1, req[1]);
 }
 
-TEST(ideal_test, not_found) 
+
+TEST(ideal_test, not_found)
 {
-    IdealCache<int, int> cache(5);
+    Caches::IdealCache<int, int> cache(5);
 
-    int element_1 = 1;
+    const int missing = 1;
+    std::vector<int> present = {2};
 
-    std::vector<int> input_data = {2};
-
-    for (size_t i = 0; i < input_data.size(); i++) 
+    for (size_t i = 0; i < present.size(); ++i)
     {
-        std::queue<size_t> position_queue;
-        position_queue.push(i);
-
-        cache.input_data.emplace(input_data[i], position_queue);
-    } 
-
-    for (int& element : input_data) 
-    {
-        cache.put(element, element);
+        std::queue<size_t> q;
+        q.push(i); 
+        q.push(i); 
+        cache.input_data.emplace(present[i], std::move(q));
     }
 
-    EXPECT_EQ(cache.get(element_1), cache.end());
+
+    for (int page_id : present) 
+    {
+        cache.store(page_id, page_id);
+    }
+
+    auto v = cache.fetch(missing);
+    EXPECT_FALSE(v.has_value());
 }
