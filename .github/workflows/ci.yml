@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+    
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test-ubuntu:
+    name: Build & Test (Ubuntu)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install system deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake ninja-build \
+            libgtest-dev
+
+      
+      - name: Build & install GoogleTest
+        run: |
+          cmake -S /usr/src/googletest -B /tmp/build-gtest -DCMAKE_BUILD_TYPE=Release
+          cmake --build /tmp/build-gtest --config Release -j
+          sudo cmake --install /tmp/build-gtest
+
+      - name: Configure (CMake)
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release -j
+
+      - name: Show binaries
+        run: |
+          echo "Built binaries:"
+          ls -la build || true
+          ls -la build/LFU build/ideal || true
+
+      
+      - name: CTest – all
+        working-directory: build
+        run: ctest --output-on-failure
+
+      - name: CTest – unit only
+        if: always()
+        working-directory: build
+        run: ctest -L unit --output-on-failure || true
+
+      - name: CTest – e2e only
+        if: always()
+        working-directory: build
+        run: ctest -L e2e --output-on-failure || true
+
+      - name: Collect CTest logs
+        if: failure()
+        run: |
+          mkdir -p artifacts/ctest
+          cp -r build/Testing artifacts/ctest/ || true
+          cp -r build/**/CTestTestfile.cmake artifacts/ctest/ || true
+
+      - name: Upload artifacts (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-and-ctest-logs
+          path: |
+            artifacts/ctest
+            build/LFU
+            build/ideal
+          if-no-files-found: warn
