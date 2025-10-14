@@ -125,7 +125,7 @@ private:
     void insert_new(const Page_indexT& index, const Page_dataT& data)
     {
         auto& lst = buckets[1];
-        lst.push_front(NodeT{index, PairT{1, data}});
+        lst.emplace_front(index, PairT{1, data}); 
         valueMap[index] = lst.begin();
         minFreq = 1;
     }
@@ -150,7 +150,7 @@ private:
 
         const std::size_t newFreq  = curFreq + 1;
         auto&             nextList = buckets[newFreq];
-        nextList.push_front(NodeT{index, PairT{newFreq, std::move(curVal)}});
+        nextList.emplace_front(index, PairT{newFreq, std::move(curVal)});
         valueMap[index]            = nextList.begin();
     }
 
