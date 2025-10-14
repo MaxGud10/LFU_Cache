@@ -30,7 +30,9 @@ int main()
         requests.push_back(page_id);
     }
 
-    Caches::IdealCache<int, int> cache{cache_capacity};
+    Caches::CacheDriver<Caches::IdealCache<int,int>> driver(cache_capacity);
+
+    auto& cache = driver.cache();
     for (std::size_t pos = 0; pos < requests.size(); ++pos) 
     {
         int page_id = requests[pos];
@@ -46,7 +48,6 @@ int main()
             it->second.push(pos);
     }
 
-    Caches::CacheDriver driver{cache}; 
 
     std::size_t hit_count = 0;
     for (std::size_t pos = 0; pos < requests.size(); ++pos) 

@@ -15,8 +15,9 @@ int main()
     std::cin >> cache_capacity >> request_count;
     assert(std::cin.good());
 
-    Caches::LFUCache<int, int> cache{cache_capacity};
-    Caches::CacheDriver        driver{cache};
+    // Caches::LFUCache<int, int> cache{cache_capacity};
+    // Caches::CacheDriver        driver{cache};
+    Caches::CacheDriver<Caches::LFUCache<int,int>> driver(cache_capacity);
 
     int hit_count = 0;
 
