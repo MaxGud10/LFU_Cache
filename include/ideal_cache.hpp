@@ -48,8 +48,10 @@ private:
 public:
     IdealCache(size_t capacity_) : capacity(capacity_), size(0), current_position(0) {} 
 
-    auto begin() { return cache.begin(); }
-    auto end()   { return cache.end();   }
+    auto begin()       { return cache.begin(); }
+    auto end()         { return cache.end();   }
+    auto begin() const { return cache.begin(); }
+    auto end()   const { return cache.end();   }
 
     std::optional<Page_dataT> fetch(const Page_indexT& index)
     {
@@ -89,7 +91,7 @@ public:
         cache.emplace(index, data);
     }
 
-    void cache_dump()
+    void cache_dump() const
     { 
         std::cout << "Capacity: " << capacity << std::endl;
         std::cout << "Size: "     << size     << std::endl;

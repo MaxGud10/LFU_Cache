@@ -27,8 +27,10 @@ private:
 public:
     LFUCache(size_t capacity_) : capacity(capacity_) {}
 
-    auto begin() { return valueMap.begin(); }
-    auto end()   { return valueMap.end();   }
+    auto begin()       { return valueMap.begin(); }
+    auto end()         { return valueMap.end();   }
+    auto begin() const { return valueMap.begin(); }  
+    auto end()   const { return valueMap.end();   }
 
 
     // ищем элемент по ключу
